@@ -1,0 +1,13 @@
+name:
+    css: '#productTitle'
+    type: Text
+product_description:
+    css: '#productDescription'
+    type: Text
+availability:
+    css: '#availability'
+    type: Text
+images:
+    css: '.imgTagWrapper img'
+    type: Attribute
+    attribute: data-a-dynamic-image
