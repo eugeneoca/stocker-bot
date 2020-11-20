@@ -18,7 +18,7 @@ class Bot():
         if token=="":
             print("Your bot cannot find the token.")
         else:
-            self.chrome = webdriver.Chrome()
+            #self.chrome = webdriver.Chrome()
             self.token = token
             self.bot = commands.Bot(command_prefix="s!")
             self.activate_commands()
