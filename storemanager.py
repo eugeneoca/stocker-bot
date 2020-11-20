@@ -8,13 +8,16 @@ from urllib.parse import urlparse
 from urllib.request import urlopen,Request
 import json
 from discord_notify import Notifier
+import discord
+from discord import Webhook, RequestsWebhookAdapter
+from discord.ext import commands
 
 class StoreManager:
-
     db = ""
     monitoring_enabled = False
-    webhook = Notifier("https://discordapp.com/api/webhooks/761726793911762955/f5mM1eXD8yrX9VmCQguBJlrRIxev7Bp6ivYWs_oSalS-OR9kKeZWiEIQOZGf5NhkR53R")
-    webhook_client = Notifier("https://discordapp.com/api/webhooks/764782627282354206/9iGrCAxDsHz-WfV0Bhj0A2QoxqD8u0_w91rCHYSwRap87uDMgGv4Ud9jYxXI04gqQTCm")
+
+    #webhook_embedded = Webhook.from_url("https://discordapp.com/api/webhooks/764782627282354206/9iGrCAxDsHz-WfV0Bhj0A2QoxqD8u0_w91rCHYSwRap87uDMgGv4Ud9jYxXI04gqQTCm", adapter=RequestsWebhookAdapter()) # For client
+    webhook_embedded = Webhook.from_url("https://discord.com/api/webhooks/761726793911762955/f5mM1eXD8yrX9VmCQguBJlrRIxev7Bp6ivYWs_oSalS-OR9kKeZWiEIQOZGf5NhkR53R", adapter=RequestsWebhookAdapter())
 
     def __init__(self):
         self.db = Database(
@@ -86,6 +89,12 @@ class StoreManager:
         except Exception as error:
             return "`Problem adding a product. "+str(error)+"`"
 
+    def view_product(self, product_id):
+        with self.db.get_cursor() as cursor:
+            cursor.execute("SELECT t1.id, product_url, instock, domain FROM products t1 LEFT JOIN stores t2 ON t1.store_id = t2.id WHERE t1.id = '"+str(product_id)+"' ORDER BY domain LIMIT 1")
+            result = cursor.fetchall()
+            return result
+
     def unregister_product(self, product_id):
         try:
             with self.db.get_cursor() as cursor:
@@ -134,14 +143,23 @@ class StoreManager:
                                         with self.db.get_cursor() as cursor:
                                             cursor.execute("UPDATE products SET instock = '1' WHERE id = '"+str(product_id)+"'")
                                             self.db.db_instance.commit()
-                                            self.webhook_client.send("`"+ str(product_url) +" is now available!`")
+                                            #self.webhook_client.send("`"+ str(product_url) +" is now available!`") # Notify only
+
+                                            embed = discord.Embed(title = "Product Available", description = product_url, url=product_url,color=0x00ff00)
+                                            embed.set_footer(text="Stocker V1.0.0", icon_url= "https://www.iconfinder.com/icons/4852563/download/png/512")
+                                            self.webhook_embedded.send(embed=embed)
                                             cursor.close()
                             except Exception as error:
                                 if int(instock)>0:
                                     with self.db.get_cursor() as cursor:
                                         cursor.execute("UPDATE products SET instock = '0' WHERE id = '"+str(product_id)+"'")
                                         self.db.db_instance.commit()
-                                        self.webhook_client.send("`"+ str(product_url) +" is now unavailable!`")
+                                        #self.webhook_client.send("`"+ str(product_url) +" is now unavailable!`") Notify Only
+
+                                        embed = discord.Embed(title = "Product Unvailable", description = product_url, url=product_url,color=0x00ff00)
+                                        embed.set_footer(text="Stocker V1.0.0", icon_url= "https://www.iconfinder.com/icons/4852563/download/png/512")
+                                        
+                                        self.webhook_embedded.send(embed=embed)
                                         cursor.close()
 
                                 
